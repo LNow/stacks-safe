@@ -35,3 +35,7 @@ depends_on = []
 [contracts.auth]
 path = "contracts/auth.clar"
 depends_on = []
+
+[contracts.safe]
+path = "contracts/safe.clar"
+depends_on = []
