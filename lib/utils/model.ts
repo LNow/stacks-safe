@@ -12,22 +12,27 @@ export abstract class Model {
   callReadOnly(
     method: string,
     args: Array<any> = [],
-    sender: Account = this.deployer
+    sender: string | Account = this.deployer
   ) {
     return this.chain.callReadOnlyFn(
       this.address,
       method,
       args,
-      sender.address
+      typeof sender === "string" ? sender : sender.address
     );
   }
 
   callPublic(
     method: string,
     args: Array<any> = [],
-    sender: Account = this.deployer
+    sender: string | Account = this.deployer
   ) {
-    return Tx.contractCall(this.address, method, args, sender.address);
+    return Tx.contractCall(
+      this.address,
+      method,
+      args,
+      typeof sender === "string" ? sender : sender.address
+    );
   }
 }
 
