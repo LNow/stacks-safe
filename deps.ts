@@ -1,3 +1,5 @@
+import { Account } from "https://deno.land/x/clarinet@v0.27.0/index.ts";
+
 export { Chain, Clarinet, Tx, types } from "https://deno.land/x/clarinet@v0.27.0/index.ts";
 
 export type { Account } from "https://deno.land/x/clarinet@v0.27.0/index.ts";
@@ -17,3 +19,5 @@ export {
 
 export { Context } from "./lib/utils/context.ts";
 export { Model, Models } from "./lib/utils/model.ts";
+
+export type Accounts = Map<string, Account>;

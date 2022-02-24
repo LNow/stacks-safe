@@ -1,9 +1,9 @@
-import { Account, Chain, Tx } from "../../deps.ts";
+import { Account, Accounts, Chain, Tx } from "../../deps.ts";
 import { Models } from "./model.ts";
 
 export class Context {
   readonly chain: Chain;
-  readonly accounts: Map<string, Account>;
+  readonly accounts: Accounts;
   readonly contracts: Map<string, any>;
   readonly models: Models;
   readonly deployer: Account;
