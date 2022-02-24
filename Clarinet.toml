@@ -1,10 +1,16 @@
 
 [project]
 name = "stacks-safe"
-authors = []
+authors = ["LNow"]
 telemetry = false
+requirements = []
+
+[repl]
+costs_version = 2
+
 [repl.analysis]
 passes = ["check_checker"]
+
 [repl.analysis.check_checker]
 # If true, inputs are trusted after tx_sender has been checked.
 trusted_sender = false
@@ -14,7 +20,3 @@ trusted_caller = false
 # warning, if it gets checked inside. This check will also propagate up to the
 # caller.
 callee_filter = false
-
-# [contracts.counter]
-# path = "contracts/counter.clar"
-# depends_on = []
