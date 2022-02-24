@@ -20,3 +20,13 @@ trusted_caller = false
 # warning, if it gets checked inside. This check will also propagate up to the
 # caller.
 callee_filter = false
+
+
+# EXTERNAL CONTRACTS
+[contracts.sip-010-trait-ft-standard]
+path = "contracts/external/sip-010-trait-ft-standard.clar"
+depends_on = []
+
+[contracts.sip-009-trait-nft-standard]
+path = "contracts/external/sip-009-trait-nft-standard.clar"
+depends_on = []
