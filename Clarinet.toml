@@ -30,3 +30,8 @@ depends_on = []
 [contracts.sip-009-trait-nft-standard]
 path = "contracts/external/sip-009-trait-nft-standard.clar"
 depends_on = []
+
+# CONTRACTS
+[contracts.auth]
+path = "contracts/auth.clar"
+depends_on = []
