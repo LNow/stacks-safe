@@ -134,13 +134,43 @@ describe("[SAFE]", () => {
       }
     });
 
-    it("succeeds and register specified addresses as safe owners, increases owners count and saves threshold", () => {
+    it("succeeds and register specified addresses as safe owners, increases owners count and saves threshold when threshold < no. owners", () => {
       const owners: Account[] = [
         accounts.get("wallet_1")!,
         accounts.get("wallet_2")!,
         accounts.get("wallet_5")!,
       ];
       const threshold = 2;
+      const txSender = ctx.deployer;
+      const setupTx = safe.setup(owners, threshold, txSender);
+
+      // act
+      const receipt = chain.mineBlock([setupTx]).receipts[0];
+
+      // assert
+      receipt.result.expectOk().expectBool(true);
+
+      for (let owner of owners) {
+        const result = safe.isOwner(owner);
+        result.expectBool(true);
+      }
+
+      const ownersCount = safe.getOwnersCount();
+      ownersCount.expectUint(owners.length);
+
+      const safeThreshold = safe.getThreshold();
+      safeThreshold.expectUint(threshold);
+    });
+
+    it("succeeds and register specified addresses as safe owners, increases owners count and saves threshold when threshold = no. owners", () => {
+      const owners: Account[] = [
+        accounts.get("wallet_1")!,
+        accounts.get("wallet_2")!,
+        accounts.get("wallet_5")!,
+        accounts.get("wallet_4")!,
+        accounts.get("wallet_3")!,
+      ];
+      const threshold = owners.length;
       const txSender = ctx.deployer;
       const setupTx = safe.setup(owners, threshold, txSender);
 
