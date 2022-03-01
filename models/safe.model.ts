@@ -9,6 +9,8 @@ enum Err {
   ERR_NOT_SETUP = 5006,
   ERR_NOT_FOUND = 5007,
   ERR_CANT_ABANDON = 5008,
+  ERR_UNKNOWN_TASK = 5009,
+  ERR_ALREADY_APPROVED = 5010,
 }
 
 export class SafeModel extends Model {
@@ -56,6 +58,10 @@ export class SafeModel extends Model {
 
   createTask(txSender: string | Account) {
     return this.callPublic("create-task", [], txSender);
+  }
+
+  approveTask(taskId: number | bigint, txSender: string | Account) {
+    return this.callPublic("approve-task", [types.uint(taskId)], txSender);
   }
 
   getLastTaskId() {
