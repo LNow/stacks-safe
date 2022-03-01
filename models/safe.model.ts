@@ -92,5 +92,6 @@ export class SafeModel extends Model {
 }
 
 export interface Task {
-  threshold: string
+  threshold: string;
+  approvals: string;
 }

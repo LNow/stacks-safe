@@ -620,7 +620,7 @@ describe("[SAFE]", () => {
       receipt.result.expectErr().expectUint(SafeModel.Err.ERR_NOT_AUTHORIZED);
     });
 
-    it("succeeds, creates new task with current threshold and returns its id", () => {
+    it("succeeds, creates new task with current threshold, 0 approvals and returns its id", () => {
       const owners: Account[] = [
         accounts.get("wallet_2")!,
         accounts.get("wallet_3")!,
@@ -646,6 +646,7 @@ describe("[SAFE]", () => {
         .expectSome()
         .expectTuple() as Task;
       task.threshold.expectUint(threshold);
+      task.approvals.expectUint(0);
     });
   });
 });

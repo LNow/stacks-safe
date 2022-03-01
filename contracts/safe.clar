@@ -93,7 +93,8 @@
 (define-map Tasks
   uint ;; taskId
   {
-    threshold: uint
+    threshold: uint,
+    approvals: uint,
   }
 )
 
@@ -112,7 +113,8 @@
     (asserts! (is-owner tx-sender) ERR_NOT_AUTHORIZED)
 
     (map-insert Tasks newTaskId {
-      threshold: (var-get cfgThreshold)
+      threshold: (var-get cfgThreshold),
+      approvals: u0
     })
 
     (var-set lastTaskId newTaskId)
