@@ -648,6 +648,37 @@ describe("[SAFE]", () => {
       task.threshold.expectUint(threshold);
       task.approvals.expectUint(0);
     });
+
+    it("succeeds, creates new task with current threshold, 0 approvals and returns its id when threshold has been modified", () => {
+      const owners: Account[] = [
+        accounts.get("wallet_2")!,
+        accounts.get("wallet_3")!,
+      ];
+      const threshold = 2;
+      const newThreshold = 1;
+      const setupTxSender = ctx.deployer;
+      const txSender = owners[0];
+      const setupTx = safe.setup(owners, threshold, setupTxSender);
+      const changeThresholdTx = safe.changeThreshold(newThreshold, txSender);
+      const createTaskTx = safe.createTask(txSender);
+      chain.mineBlock([setupTx, changeThresholdTx]);
+
+      // act
+      const receipt = chain.mineBlock([createTaskTx]).receipts[0];
+
+      // assert
+      const expectedTaskId = 1;
+      receipt.result.expectOk().expectUint(expectedTaskId);
+
+      safe.getLastTaskId().expectUint(expectedTaskId);
+
+      const task = safe
+        .getTask(expectedTaskId)
+        .expectSome()
+        .expectTuple() as Task;
+      task.threshold.expectUint(newThreshold);
+      task.approvals.expectUint(0);
+    })
   });
 });
 
