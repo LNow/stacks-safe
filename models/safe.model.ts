@@ -6,7 +6,7 @@ enum Err {
   ERR_INCORRECT_THRESHOLD = 5003,
   ERR_DUPLICATE_OWNER = 5004,
   ERR_ALREADY_SETUP = 5005,
-  ERR_NOT_SETUP = 5006
+  ERR_NOT_SETUP = 5006,
 }
 
 export class SafeModel extends Model {
@@ -19,18 +19,11 @@ export class SafeModel extends Model {
   }
 
   setup(
-    owners: string | Account[],
+    owners: string[] | Account[],
     threshold: number | bigint,
     txSender: string | Account
   ) {
-    let ownersList = [];
-    for (let owner of owners) {
-      ownersList.push(
-        typeof owner === "string"
-          ? types.principal(owner)
-          : types.principal(owner.address)
-      );
-    }
+    let ownersList = this.convertToOwnersList(owners);
 
     return this.callPublic(
       "setup",
@@ -40,6 +33,12 @@ export class SafeModel extends Model {
   }
 
   addOwners(owners: string[] | Account[], txSender: string | Account) {
+    let ownersList = this.convertToOwnersList(owners);
+
+    return this.callPublic("add-owners", [types.list(ownersList)], txSender);
+  }
+
+  private convertToOwnersList(owners: Account[] | string[]) {
     let ownersList = [];
     for (let owner of owners) {
       ownersList.push(
@@ -48,8 +47,7 @@ export class SafeModel extends Model {
           : types.principal(owner.address)
       );
     }
-
-    return this.callPublic("add-owners", [types.list(ownersList)], txSender)
+    return ownersList;
   }
 
   isOwner(who: string | Account) {
