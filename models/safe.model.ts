@@ -46,6 +46,14 @@ export class SafeModel extends Model {
     return this.callPublic("remove-owners", [types.list(ownersList)], txSender);
   }
 
+  changeThreshold(threshold: number | bigint, txSender: string | Account) {
+    return this.callPublic(
+      "change-threshold",
+      [types.uint(threshold)],
+      txSender
+    );
+  }
+
   private convertToOwnersList(owners: Account[] | string[]) {
     let ownersList = [];
     for (let owner of owners) {
