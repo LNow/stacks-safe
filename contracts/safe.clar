@@ -46,6 +46,7 @@
   (begin
     (asserts! (> (var-get cfgOwnersCount) u0) ERR_NOT_SETUP)
     (asserts! (> (len owners) u0) ERR_EMPTY_LIST)
+
     (try! (fold new-owner-clojure owners (ok true)))
     (var-set cfgOwnersCount (+ (var-get cfgOwnersCount) (len owners)))
     (ok true)
@@ -57,11 +58,10 @@
     (asserts! (> (var-get cfgOwnersCount) u0) ERR_NOT_SETUP)
     (asserts! (> (len owners) u0) ERR_EMPTY_LIST)
     (asserts! (> (var-get cfgOwnersCount) (len owners)) ERR_CANT_ABANDON)
+
     (try! (fold remove-owner-clojure owners (ok true)))
     (var-set cfgOwnersCount (- (var-get cfgOwnersCount) (len owners)))
     (and (> (var-get cfgThreshold) (var-get cfgOwnersCount)) (var-set cfgThreshold (var-get cfgOwnersCount)))
-
-
     (ok true)
   )
 )
