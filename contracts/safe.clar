@@ -66,6 +66,15 @@
   )
 )
 
+(define-public (change-threshold (threshold uint))
+  (begin
+    (asserts! (> (var-get cfgOwnersCount) u0) ERR_NOT_SETUP)
+    (asserts! (and (> threshold u0) (<= threshold (var-get cfgOwnersCount))) ERR_INCORRECT_THRESHOLD)
+    (var-set cfgThreshold threshold)
+    (ok true)
+  )
+)
+
 (define-private (new-owner-clojure (who principal) (out (response bool uint)))
   (match out
     okValue (ok (asserts! (map-insert SafeOwners who true) ERR_DUPLICATE_OWNER))
