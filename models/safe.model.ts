@@ -5,7 +5,8 @@ enum Err {
   ERR_EMPTY_LIST = 5002,
   ERR_INCORRECT_THRESHOLD = 5003,
   ERR_DUPLICATE_OWNER = 5004,
-  ERR_ALREADY_SETUP = 5005
+  ERR_ALREADY_SETUP = 5005,
+  ERR_NOT_SETUP = 5006
 }
 
 export class SafeModel extends Model {
@@ -36,6 +37,19 @@ export class SafeModel extends Model {
       [types.list(ownersList), types.uint(threshold)],
       txSender
     );
+  }
+
+  addOwners(owners: string[] | Account[], txSender: string | Account) {
+    let ownersList = [];
+    for (let owner of owners) {
+      ownersList.push(
+        typeof owner === "string"
+          ? types.principal(owner)
+          : types.principal(owner.address)
+      );
+    }
+
+    return this.callPublic("add-owners", [types.list(ownersList)], txSender)
   }
 
   isOwner(who: string | Account) {

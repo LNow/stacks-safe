@@ -7,6 +7,8 @@
 (define-constant ERR_INCORRECT_THRESHOLD (err u5003))
 (define-constant ERR_DUPLICATE_OWNER (err u5004))
 (define-constant ERR_ALREADY_SETUP (err u5005))
+(define-constant ERR_NOT_SETUP (err u5006))
+
 
 (define-map SafeOwners principal bool)
 (define-data-var cfgThreshold uint u0)
@@ -34,6 +36,16 @@
     (try! (fold new-owner-clojure owners (ok true)))
     (var-set cfgThreshold threshold)
     (var-set cfgOwnersCount (len owners))
+    (ok true)
+  )
+)
+
+(define-public (add-owners (owners (list 30 principal)))
+  (begin
+    (asserts! (> (var-get cfgOwnersCount) u0) ERR_NOT_SETUP)
+    (asserts! (> (len owners) u0) ERR_EMPTY_LIST)
+    (try! (fold new-owner-clojure owners (ok true)))
+    (var-set cfgOwnersCount (+ (var-get cfgOwnersCount) (len owners)))
     (ok true)
   )
 )
