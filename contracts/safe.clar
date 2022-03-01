@@ -88,3 +88,35 @@
     errValue out
   )
 )
+
+(define-data-var lastTaskId uint u0)
+(define-map Tasks
+  uint ;; taskId
+  {
+    threshold: uint
+  }
+)
+
+(define-read-only (get-task (id uint))
+  (map-get? Tasks id)
+)
+
+(define-read-only (get-last-task-id)
+  (var-get lastTaskId)
+)
+
+(define-public (create-task)
+  (let
+    ((newTaskId (+ (var-get lastTaskId) u1)))
+    (asserts! (> (var-get cfgOwnersCount) u0) ERR_NOT_SETUP)
+    (asserts! (is-owner tx-sender) ERR_NOT_AUTHORIZED)
+
+    (map-insert Tasks newTaskId {
+      threshold: (var-get cfgThreshold)
+    })
+
+    (var-set lastTaskId newTaskId)
+    (ok newTaskId)
+  )
+)
+

@@ -9,7 +9,7 @@ import {
   Accounts,
   Account,
 } from "../deps.ts";
-import { SafeModel } from "../models/safe.model.ts";
+import { SafeModel, Task } from "../models/safe.model.ts";
 
 let ctx: Context;
 let safe: SafeModel;
@@ -481,7 +481,7 @@ describe("[SAFE]", () => {
       ownersCount.expectUint(initialOwners.length - owners.length);
 
       const newThreshold = safe.getThreshold();
-      newThreshold.expectUint(threshold - owners.length)
+      newThreshold.expectUint(threshold - owners.length);
     });
   });
 
@@ -515,8 +515,10 @@ describe("[SAFE]", () => {
       const receipt = chain.mineBlock([changeThresholdTx]).receipts[0];
 
       // assert
-      receipt.result.expectErr().expectUint(SafeModel.Err.ERR_INCORRECT_THRESHOLD);
-    })
+      receipt.result
+        .expectErr()
+        .expectUint(SafeModel.Err.ERR_INCORRECT_THRESHOLD);
+    });
 
     it("fails when threshold is greater than owners count", () => {
       const initialOwners: Account[] = [
@@ -535,7 +537,9 @@ describe("[SAFE]", () => {
       const receipt = chain.mineBlock([changeThresholdTx]).receipts[0];
 
       // assert
-      receipt.result.expectErr().expectUint(SafeModel.Err.ERR_INCORRECT_THRESHOLD);
+      receipt.result
+        .expectErr()
+        .expectUint(SafeModel.Err.ERR_INCORRECT_THRESHOLD);
     });
 
     it("succeeds and changes threshold to lower value than previous one", () => {
@@ -557,7 +561,7 @@ describe("[SAFE]", () => {
       // assert
       receipt.result.expectOk().expectBool(true);
 
-      safe.getThreshold().expectUint(threshold)
+      safe.getThreshold().expectUint(threshold);
     });
 
     it("succeeds and changes threshold to higher value than previous one", () => {
@@ -581,9 +585,69 @@ describe("[SAFE]", () => {
       // assert
       receipt.result.expectOk().expectBool(true);
 
-      safe.getThreshold().expectUint(threshold)
-    })
-  })
+      safe.getThreshold().expectUint(threshold);
+    });
+  });
+
+  describe("create-task()", () => {
+    it("fails when safe has not been setup", () => {
+      const txSender = accounts.get("wallet_5")!;
+      const createTaskTx = safe.createTask(txSender);
+
+      // act
+      const receipt = chain.mineBlock([createTaskTx]).receipts[0];
+
+      // assert
+      receipt.result.expectErr().expectUint(SafeModel.Err.ERR_NOT_SETUP);
+    });
+
+    it("fails when called by walled by wallet that is not one of the safe owners", () => {
+      const owners: Account[] = [
+        accounts.get("wallet_2")!,
+        accounts.get("wallet_3")!,
+      ];
+      const threshold = 1;
+      const setupTxSender = ctx.deployer;
+      const txSender = accounts.get("wallet_5")!;
+      const setupTx = safe.setup(owners, threshold, setupTxSender);
+      const createTaskTx = safe.createTask(txSender);
+      chain.mineBlock([setupTx]);
+
+      // act
+      const receipt = chain.mineBlock([createTaskTx]).receipts[0];
+
+      // assert
+      receipt.result.expectErr().expectUint(SafeModel.Err.ERR_NOT_AUTHORIZED);
+    });
+
+    it("succeeds, creates new task with current threshold and returns its id", () => {
+      const owners: Account[] = [
+        accounts.get("wallet_2")!,
+        accounts.get("wallet_3")!,
+      ];
+      const threshold = 2;
+      const setupTxSender = ctx.deployer;
+      const txSender = owners[0];
+      const setupTx = safe.setup(owners, threshold, setupTxSender);
+      const createTaskTx = safe.createTask(txSender);
+      chain.mineBlock([setupTx]);
+
+      // act
+      const receipt = chain.mineBlock([createTaskTx]).receipts[0];
+
+      // assert
+      const expectedTaskId = 1;
+      receipt.result.expectOk().expectUint(expectedTaskId);
+
+      safe.getLastTaskId().expectUint(expectedTaskId);
+
+      const task = safe
+        .getTask(expectedTaskId)
+        .expectSome()
+        .expectTuple() as Task;
+      task.threshold.expectUint(threshold);
+    });
+  });
 });
 
 run();

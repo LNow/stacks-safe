@@ -54,6 +54,18 @@ export class SafeModel extends Model {
     );
   }
 
+  createTask(txSender: string | Account) {
+    return this.callPublic("create-task", [], txSender);
+  }
+
+  getLastTaskId() {
+    return this.callReadOnly("get-last-task-id").result;
+  }
+
+  getTask(taskId: number | bigint) {
+    return this.callReadOnly("get-task", [types.uint(taskId)]).result;
+  }
+
   private convertToOwnersList(owners: Account[] | string[]) {
     let ownersList = [];
     for (let owner of owners) {
@@ -77,4 +89,8 @@ export class SafeModel extends Model {
   getThreshold() {
     return this.callReadOnly("get-threshold").result;
   }
+}
+
+export interface Task {
+  threshold: string
 }
