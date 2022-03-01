@@ -311,7 +311,7 @@ describe("[SAFE]", () => {
       const receipt = chain.mineBlock([addOwnersTx]).receipts[0];
 
       // assert
-      receipt.result.expectOk().expectBool(true)
+      receipt.result.expectOk().expectBool(true);
 
       for (let owner of owners) {
         const result = safe.isOwner(owner);
@@ -320,6 +320,168 @@ describe("[SAFE]", () => {
 
       const ownersCount = safe.getOwnersCount();
       ownersCount.expectUint(initialOwners.length + owners.length);
+    });
+  });
+
+  describe("remove-owners()", () => {
+    it("fails when safe has not been setup", () => {
+      const owners: Account[] = [accounts.get("wallet_1")!];
+      const txSender = ctx.deployer;
+      const removeOwnersTx = safe.removeOwners(owners, txSender);
+
+      // act
+      const receipt = chain.mineBlock([removeOwnersTx]).receipts[0];
+
+      // assert
+      receipt.result.expectErr().expectUint(SafeModel.Err.ERR_NOT_SETUP);
+    });
+
+    it("fails when owners list is empty", () => {
+      const initialOwners: Account[] = [
+        accounts.get("wallet_2")!,
+        accounts.get("wallet_3")!,
+      ];
+      const threshold = 1;
+      const owners: Account[] = [];
+      const txSender = ctx.deployer;
+      const setupTx = safe.setup(initialOwners, threshold, txSender);
+      const removeOwnersTx = safe.removeOwners(owners, txSender);
+      chain.mineBlock([setupTx]);
+
+      // act
+      const receipt = chain.mineBlock([removeOwnersTx]).receipts[0];
+
+      // assert
+      receipt.result.expectErr().expectUint(SafeModel.Err.ERR_EMPTY_LIST);
+    });
+
+    it("fails when owners list contains address that is not safe owner", () => {
+      const initialOwners: Account[] = [
+        accounts.get("wallet_2")!,
+        accounts.get("wallet_3")!,
+      ];
+      const threshold = 1;
+      const owners: Account[] = [accounts.get("wallet_1")!];
+      const txSender = ctx.deployer;
+      const setupTx = safe.setup(initialOwners, threshold, txSender);
+      const removeOwnersTx = safe.removeOwners(owners, txSender);
+      chain.mineBlock([setupTx]);
+
+      // act
+      const receipt = chain.mineBlock([removeOwnersTx]).receipts[0];
+
+      // assert
+      receipt.result.expectErr().expectUint(SafeModel.Err.ERR_NOT_FOUND);
+    });
+
+    it("fails when owners list contains duplicates (trying to remove same address more than once)", () => {
+      const initialOwners: Account[] = [
+        accounts.get("wallet_2")!,
+        accounts.get("wallet_3")!,
+        accounts.get("wallet_5")!,
+      ];
+      const threshold = 1;
+      const owners: Account[] = [
+        accounts.get("wallet_3")!,
+        accounts.get("wallet_3")!,
+      ];
+      const txSender = ctx.deployer;
+      const setupTx = safe.setup(initialOwners, threshold, txSender);
+      const removeOwnersTx = safe.removeOwners(owners, txSender);
+      chain.mineBlock([setupTx]);
+
+      // act
+      const receipt = chain.mineBlock([removeOwnersTx]).receipts[0];
+
+      // assert
+      receipt.result.expectErr().expectUint(SafeModel.Err.ERR_NOT_FOUND);
+    });
+
+    it("fails when length of owners list is equal owners count (aka. abandoning safe)", () => {
+      const initialOwners: Account[] = [
+        accounts.get("wallet_2")!,
+        accounts.get("wallet_3")!,
+      ];
+      const threshold = 1;
+      const owners: Account[] = [
+        accounts.get("wallet_3")!,
+        accounts.get("wallet_2")!,
+      ];
+      const txSender = ctx.deployer;
+      const setupTx = safe.setup(initialOwners, threshold, txSender);
+      const removeOwnersTx = safe.removeOwners(owners, txSender);
+      chain.mineBlock([setupTx]);
+
+      // act
+      const receipt = chain.mineBlock([removeOwnersTx]).receipts[0];
+
+      // assert
+      receipt.result.expectErr().expectUint(SafeModel.Err.ERR_CANT_ABANDON);
+    });
+
+    it("succeeds and removes owners, reduce owners count", () => {
+      const initialOwners: Account[] = [
+        accounts.get("wallet_2")!,
+        accounts.get("wallet_3")!,
+        accounts.get("wallet_5")!,
+      ];
+      const threshold = 1;
+      const owners: Account[] = [
+        accounts.get("wallet_3")!,
+        accounts.get("wallet_2")!,
+      ];
+      const txSender = ctx.deployer;
+      const setupTx = safe.setup(initialOwners, threshold, txSender);
+      const removeOwnersTx = safe.removeOwners(owners, txSender);
+      chain.mineBlock([setupTx]);
+
+      // act
+      const receipt = chain.mineBlock([removeOwnersTx]).receipts[0];
+
+      // assert
+      receipt.result.expectOk().expectBool(true);
+
+      for (let owner of owners) {
+        const result = safe.isOwner(owner);
+        result.expectBool(false);
+      }
+
+      const ownersCount = safe.getOwnersCount();
+      ownersCount.expectUint(initialOwners.length - owners.length);
+    });
+
+    it("succeeds and removes owners, reduce owners count, reduce threshold if owners count dropped below current ones", () => {
+      const initialOwners: Account[] = [
+        accounts.get("wallet_2")!,
+        accounts.get("wallet_3")!,
+        accounts.get("wallet_5")!,
+      ];
+      const threshold = initialOwners.length;
+      const owners: Account[] = [
+        accounts.get("wallet_3")!,
+        accounts.get("wallet_2")!,
+      ];
+      const txSender = ctx.deployer;
+      const setupTx = safe.setup(initialOwners, threshold, txSender);
+      const removeOwnersTx = safe.removeOwners(owners, txSender);
+      chain.mineBlock([setupTx]);
+
+      // act
+      const receipt = chain.mineBlock([removeOwnersTx]).receipts[0];
+
+      // assert
+      receipt.result.expectOk().expectBool(true);
+
+      for (let owner of owners) {
+        const result = safe.isOwner(owner);
+        result.expectBool(false);
+      }
+
+      const ownersCount = safe.getOwnersCount();
+      ownersCount.expectUint(initialOwners.length - owners.length);
+
+      const newThreshold = safe.getThreshold();
+      newThreshold.expectUint(threshold - owners.length)
     });
   });
 });

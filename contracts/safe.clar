@@ -8,6 +8,8 @@
 (define-constant ERR_DUPLICATE_OWNER (err u5004))
 (define-constant ERR_ALREADY_SETUP (err u5005))
 (define-constant ERR_NOT_SETUP (err u5006))
+(define-constant ERR_NOT_FOUND (err u5007))
+(define-constant ERR_CANT_ABANDON (err u5008))
 
 
 (define-map SafeOwners principal bool)
@@ -50,9 +52,30 @@
   )
 )
 
+(define-public (remove-owners (owners (list 30 principal)))
+  (begin
+    (asserts! (> (var-get cfgOwnersCount) u0) ERR_NOT_SETUP)
+    (asserts! (> (len owners) u0) ERR_EMPTY_LIST)
+    (asserts! (> (var-get cfgOwnersCount) (len owners)) ERR_CANT_ABANDON)
+    (try! (fold remove-owner-clojure owners (ok true)))
+    (var-set cfgOwnersCount (- (var-get cfgOwnersCount) (len owners)))
+    (and (> (var-get cfgThreshold) (var-get cfgOwnersCount)) (var-set cfgThreshold (var-get cfgOwnersCount)))
+
+
+    (ok true)
+  )
+)
+
 (define-private (new-owner-clojure (who principal) (out (response bool uint)))
   (match out
     okValue (ok (asserts! (map-insert SafeOwners who true) ERR_DUPLICATE_OWNER))
+    errValue out
+  )
+)
+
+(define-private (remove-owner-clojure (who principal) (out (response bool uint)))
+  (match out
+    okValue (ok (asserts! (map-delete SafeOwners who) ERR_NOT_FOUND))
     errValue out
   )
 )
