@@ -12,6 +12,8 @@
 (define-constant ERR_CANT_ABANDON (err u5008))
 (define-constant ERR_UNKNOWN_TASK (err u5009))
 (define-constant ERR_ALREADY_APPROVED (err u5010))
+(define-constant ERR_NOT_APPROVED (err u5011))
+(define-constant ERR_ALREADY_EXECUTED (err u5012))
 
 
 (define-map SafeOwners principal bool)
@@ -97,6 +99,7 @@
   {
     threshold: uint,
     approvals: uint,
+    executed: bool,
   }
 )
 
@@ -125,7 +128,8 @@
 
     (map-insert Tasks newTaskId {
       threshold: (var-get cfgThreshold),
-      approvals: u0
+      approvals: u0,
+      executed: false,
     })
 
     (var-set lastTaskId newTaskId)
@@ -139,9 +143,23 @@
     ((task (unwrap! (get-task id) ERR_UNKNOWN_TASK)))
     (asserts! (is-owner tx-sender) ERR_NOT_AUTHORIZED)
     (asserts! (has-not-approved id tx-sender) ERR_ALREADY_APPROVED)
+    (asserts! (not (get executed task)) ERR_ALREADY_EXECUTED)
 
     (map-set Tasks id (merge task {approvals: (+ (get approvals task) u1)}))
     (map-insert Approvals {taskId: id, who: tx-sender} true)
+    (ok true)
+  )
+)
+
+;; #[allow(unchecked_data)]
+(define-public (execute-task (id uint))
+  (let
+    ((task (unwrap! (get-task id) ERR_UNKNOWN_TASK)))
+    (asserts! (is-owner tx-sender) ERR_NOT_AUTHORIZED)
+    (asserts! (>= (get approvals task) (get threshold task)) ERR_NOT_APPROVED)
+    (asserts! (not (get executed task)) ERR_ALREADY_EXECUTED)
+
+    (map-set Tasks id (merge task {executed: true}))
     (ok true)
   )
 )

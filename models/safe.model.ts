@@ -11,6 +11,8 @@ enum Err {
   ERR_CANT_ABANDON = 5008,
   ERR_UNKNOWN_TASK = 5009,
   ERR_ALREADY_APPROVED = 5010,
+  ERR_NOT_APPROVED = 5011,
+  ERR_ALREADY_EXECUTED = 5012,
 }
 
 export class SafeModel extends Model {
@@ -64,6 +66,10 @@ export class SafeModel extends Model {
     return this.callPublic("approve-task", [types.uint(taskId)], txSender);
   }
 
+  executeTask(taskId: number | bigint, txSender: string | Account) {
+    return this.callPublic("execute-task", [types.uint(taskId)], txSender);
+  }
+
   getLastTaskId() {
     return this.callReadOnly("get-last-task-id").result;
   }
@@ -100,4 +106,5 @@ export class SafeModel extends Model {
 export interface Task {
   threshold: string;
   approvals: string;
+  executed: string;
 }
