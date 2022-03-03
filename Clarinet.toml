@@ -39,3 +39,8 @@ depends_on = []
 [contracts.safe]
 path = "contracts/safe.clar"
 depends_on = []
+
+# TASKS
+[contracts.add-owners-task]
+path = "contracts/tasks/add-owners-task.clar"
+depends_on = ["safe"]
