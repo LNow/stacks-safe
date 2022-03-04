@@ -228,99 +228,94 @@ describe("[SAFE]", () => {
       receipt.result.expectErr().expectUint(SafeModel.Err.ERR_NOT_SETUP);
     });
 
-    it("fails when owners list is empty", () => {
-      const initialOwners: Account[] = [
-        accounts.get("wallet_2")!,
-        accounts.get("wallet_1")!,
-      ];
-      const owners: Account[] = [];
-      const threshold = 2;
-      const txSender = ctx.deployer;
-      const setupTx = safe.setup(initialOwners, threshold, txSender);
-      const addOwnersTx = safe.addOwners(owners, txSender);
-      chain.mineBlock([setupTx]);
+    describe("after setup", () => {
+      const initialThreshold = 2;
+      const initialOwnersCount = 2;
 
-      // act
-      const receipt = chain.mineBlock([addOwnersTx]).receipts[0];
+      beforeEach(() => {
+        const initialOwners: Account[] = [
+          accounts.get("wallet_1")!,
+          accounts.get("wallet_2")!,
+        ];
+        const setupTx = safe.setup(
+          initialOwners,
+          initialThreshold,
+          ctx.deployer
+        );
+        chain.mineBlock([setupTx]);
+        safe.getOwnersCount().expectUint(initialOwnersCount);
+      });
 
-      // assert
-      receipt.result.expectErr().expectUint(SafeModel.Err.ERR_EMPTY_LIST);
-    });
+      it("fails when owners list is empty", () => {
+        const owners: Account[] = [];
+        const txSender = ctx.deployer;
+        const addOwnersTx = safe.addOwners(owners, txSender);
 
-    it("fails when owners list contains duplicates", () => {
-      const initialOwners: Account[] = [
-        accounts.get("wallet_2")!,
-        accounts.get("wallet_1")!,
-      ];
-      const owners: Account[] = [
-        accounts.get("wallet_3")!,
-        accounts.get("wallet_3")!,
-      ];
-      const threshold = 2;
-      const txSender = ctx.deployer;
-      const setupTx = safe.setup(initialOwners, threshold, txSender);
-      const addOwnersTx = safe.addOwners(owners, txSender);
-      chain.mineBlock([setupTx]);
+        // act
+        const receipt = chain.mineBlock([addOwnersTx]).receipts[0];
 
-      // act
-      const receipt = chain.mineBlock([addOwnersTx]).receipts[0];
+        // assert
+        receipt.result.expectErr().expectUint(SafeModel.Err.ERR_EMPTY_LIST);
+      });
 
-      // assert
-      receipt.result.expectErr().expectUint(SafeModel.Err.ERR_DUPLICATE_OWNER);
-    });
+      it("fails when owners list contains duplicates", () => {
+        const owners: Account[] = [
+          accounts.get("wallet_3")!,
+          accounts.get("wallet_3")!,
+        ];
+        const txSender = ctx.deployer;
+        const addOwnersTx = safe.addOwners(owners, txSender);
 
-    it("fails when owners list contains addresses which are already safe owners", () => {
-      const initialOwners: Account[] = [
-        accounts.get("wallet_2")!,
-        accounts.get("wallet_1")!,
-      ];
-      const owners: Account[] = [
-        accounts.get("wallet_3")!,
-        accounts.get("wallet_1")!,
-        accounts.get("wallet_4")!,
-      ];
-      const threshold = 2;
-      const txSender = ctx.deployer;
-      const setupTx = safe.setup(initialOwners, threshold, txSender);
-      const addOwnersTx = safe.addOwners(owners, txSender);
-      chain.mineBlock([setupTx]);
+        // act
+        const receipt = chain.mineBlock([addOwnersTx]).receipts[0];
 
-      // act
-      const receipt = chain.mineBlock([addOwnersTx]).receipts[0];
+        // assert
+        receipt.result
+          .expectErr()
+          .expectUint(SafeModel.Err.ERR_DUPLICATE_OWNER);
+      });
 
-      // assert
-      receipt.result.expectErr().expectUint(SafeModel.Err.ERR_DUPLICATE_OWNER);
-    });
+      it("fails when owners list contains addresses which are already safe owners", () => {
+        const owners: Account[] = [
+          accounts.get("wallet_3")!,
+          accounts.get("wallet_1")!, // set up as initial safe owner
+          accounts.get("wallet_4")!,
+        ];
+        const txSender = ctx.deployer;
+        const addOwnersTx = safe.addOwners(owners, txSender);
 
-    it("succeeds and adds new addresses as safe owners and increase owners count", () => {
-      const initialOwners: Account[] = [
-        accounts.get("wallet_7")!,
-        accounts.get("wallet_5")!,
-      ];
-      const owners: Account[] = [
-        accounts.get("wallet_3")!,
-        accounts.get("wallet_4")!,
-        accounts.get("wallet_9")!,
-      ];
-      const threshold = 2;
-      const txSender = ctx.deployer;
-      const setupTx = safe.setup(initialOwners, threshold, txSender);
-      const addOwnersTx = safe.addOwners(owners, txSender);
-      chain.mineBlock([setupTx]);
+        // act
+        const receipt = chain.mineBlock([addOwnersTx]).receipts[0];
 
-      // act
-      const receipt = chain.mineBlock([addOwnersTx]).receipts[0];
+        // assert
+        receipt.result
+          .expectErr()
+          .expectUint(SafeModel.Err.ERR_DUPLICATE_OWNER);
+      });
 
-      // assert
-      receipt.result.expectOk().expectBool(true);
+      it("succeeds and adds new addresses as safe owners and increase owners count", () => {
+        const owners: Account[] = [
+          accounts.get("wallet_3")!,
+          accounts.get("wallet_4")!,
+          accounts.get("wallet_9")!,
+        ];
+        const txSender = ctx.deployer;
+        const addOwnersTx = safe.addOwners(owners, txSender);
 
-      for (let owner of owners) {
-        const result = safe.isOwner(owner);
-        result.expectBool(true);
-      }
+        // act
+        const receipt = chain.mineBlock([addOwnersTx]).receipts[0];
 
-      const ownersCount = safe.getOwnersCount();
-      ownersCount.expectUint(initialOwners.length + owners.length);
+        // assert
+        receipt.result.expectOk().expectBool(true);
+
+        for (let owner of owners) {
+          const result = safe.isOwner(owner);
+          result.expectBool(true);
+        }
+
+        const ownersCount = safe.getOwnersCount();
+        ownersCount.expectUint(initialOwnersCount + owners.length);
+      });
     });
   });
 
@@ -698,7 +693,8 @@ describe("[SAFE]", () => {
       chain.mineBlock([setupTx]);
 
       // act
-      const receipt = chain.mineBlock([createTaskTx, changeThresholdTx]).receipts[0];
+      const receipt = chain.mineBlock([createTaskTx, changeThresholdTx])
+        .receipts[0];
 
       // assert
       const expectedTaskId = 1;
@@ -714,7 +710,6 @@ describe("[SAFE]", () => {
       task.approvals.expectUint(0);
       task.executed.expectBool(false);
     });
-
   });
 
   describe("approve-task()", () => {
