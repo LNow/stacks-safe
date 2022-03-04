@@ -100,6 +100,7 @@
     threshold: uint,
     approvals: uint,
     executed: bool,
+    executor: principal,
   }
 )
 
@@ -130,6 +131,7 @@
       threshold: (var-get cfgThreshold),
       approvals: u0,
       executed: false,
+      executor: contract-caller,
     })
 
     (var-set lastTaskId newTaskId)
@@ -157,6 +159,7 @@
     ((task (unwrap! (get-task id) ERR_UNKNOWN_TASK)))
     (asserts! (is-owner tx-sender) ERR_NOT_AUTHORIZED)
     (asserts! (>= (get approvals task) (get threshold task)) ERR_NOT_APPROVED)
+    (asserts! (is-eq contract-caller (get executor task)) ERR_NOT_AUTHORIZED)
     (asserts! (not (get executed task)) ERR_ALREADY_EXECUTED)
 
     (map-set Tasks id (merge task {executed: true}))
