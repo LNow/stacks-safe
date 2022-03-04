@@ -10,15 +10,18 @@ import {
   Account,
   beforeAll,
 } from "../deps.ts";
+import { AuthModel } from "../models/auth.model.ts";
 import { SafeModel, Task } from "../models/safe.model.ts";
 
 let ctx: Context;
+let auth: AuthModel;
 let safe: SafeModel;
 let chain: Chain;
 let accounts: Accounts;
 
 beforeEach(() => {
   ctx = new Context();
+  auth = ctx.models.get(AuthModel);
   safe = ctx.models.get(SafeModel);
   chain = ctx.chain;
   accounts = ctx.accounts;
@@ -242,7 +245,13 @@ describe("[SAFE]", () => {
           initialThreshold,
           ctx.deployer
         );
-        chain.mineBlock([setupTx]);
+        const grantTx = auth.grant(
+          ctx.deployer.address,
+          safe.address,
+          "add-owners",
+          ctx.deployer
+        );
+        chain.mineBlock([setupTx, grantTx]);
         safe.getOwnersCount().expectUint(initialOwnersCount);
       });
 
@@ -291,6 +300,22 @@ describe("[SAFE]", () => {
         receipt.result
           .expectErr()
           .expectUint(SafeModel.Err.ERR_DUPLICATE_OWNER);
+      });
+
+      it("fails when called by address that has not been granted to call it", () => {
+        const owners: Account[] = [
+          accounts.get("wallet_3")!,
+          accounts.get("wallet_4")!,
+          accounts.get("wallet_9")!,
+        ];
+        const txSender = accounts.get("wallet_1")!;
+        const addOwnersTx = safe.addOwners(owners, txSender);
+
+        // act
+        const receipt = chain.mineBlock([addOwnersTx]).receipts[0];
+
+        // assert
+        receipt.result.expectErr().expectUint(SafeModel.Err.ERR_NOT_AUTHORIZED);
       });
 
       it("succeeds and adds new addresses as safe owners and increase owners count", () => {
@@ -598,7 +623,7 @@ describe("[SAFE]", () => {
         task.threshold.expectUint(initialThreshold);
         task.approvals.expectUint(0);
         task.executed.expectBool(false);
-        task.executor.expectPrincipal(txSender.address)
+        task.executor.expectPrincipal(txSender.address);
       });
 
       it("succeeds, creates new task with current threshold, 0 approvals and returns its id when threshold has been modified before task creation", () => {
@@ -624,7 +649,7 @@ describe("[SAFE]", () => {
         task.threshold.expectUint(newThreshold);
         task.approvals.expectUint(0);
         task.executed.expectBool(false);
-        task.executor.expectPrincipal(txSender.address)
+        task.executor.expectPrincipal(txSender.address);
       });
 
       it("succeeds, creates new task and this task is not affected by threshold change", () => {
@@ -650,7 +675,7 @@ describe("[SAFE]", () => {
         task.threshold.expectUint(initialThreshold);
         task.approvals.expectUint(0);
         task.executed.expectBool(false);
-        task.executor.expectPrincipal(txSender.address)
+        task.executor.expectPrincipal(txSender.address);
       });
     });
   });

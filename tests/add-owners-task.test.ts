@@ -13,8 +13,10 @@ import {
 } from "../deps.ts";
 import { SafeModel, Task } from "../models/safe.model.ts";
 import { AddOwnersTaskModel } from "../models/add-owners-task.model.ts";
+import { AuthModel } from "../models/auth.model.ts";
 
 let ctx: Context;
+let auth: AuthModel;
 let safe: SafeModel;
 let addOwnersTask: AddOwnersTaskModel;
 let chain: Chain;
@@ -22,6 +24,7 @@ let accounts: Accounts;
 
 beforeEach(() => {
   ctx = new Context();
+  auth = ctx.models.get(AuthModel);
   safe = ctx.models.get(SafeModel);
   addOwnersTask = ctx.models.get(AddOwnersTaskModel);
   chain = ctx.chain;
@@ -102,14 +105,20 @@ describe("[ADD OWNERS_TASK]", () => {
       const setupTx = safe.setup(initialOwners, threshold, txSender);
       const createAddOwnersTaskTx = addOwnersTask.create(owners, txSender);
       const approveTaskTx = safe.approveTask(taskId, txSender);
+      const grantTx = auth.grant(
+        addOwnersTask.address,
+        safe.address,
+        "add-owners",
+        txSender
+      );
       const executeAddOwnersTaskTx = addOwnersTask.execute(taskId, txSender);
-      chain.mineBlock([setupTx, createAddOwnersTaskTx, approveTaskTx]);
+      chain.mineBlock([setupTx, grantTx, createAddOwnersTaskTx, approveTaskTx]);
 
       // act
       const receipt = chain.mineBlock([executeAddOwnersTaskTx]).receipts[0];
 
       // assert
-      receipt.result.expectOk().expectBool(true)
+      receipt.result.expectOk().expectBool(true);
 
       for (let owner of owners) {
         const result = safe.isOwner(owner);
@@ -118,7 +127,7 @@ describe("[ADD OWNERS_TASK]", () => {
 
       const task = safe.getTask(taskId).expectSome().expectTuple() as Task;
       task.executed.expectBool(true);
-    })
+    });
   });
 });
 

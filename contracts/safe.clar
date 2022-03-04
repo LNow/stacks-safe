@@ -49,6 +49,7 @@
 (define-public (add-owners (owners (list 30 principal)))
   (begin
     (asserts! (> (var-get cfgOwnersCount) u0) ERR_NOT_SETUP)
+    (asserts! (can-call contract-caller "add-owners") ERR_NOT_AUTHORIZED)
     (asserts! (> (len owners) u0) ERR_EMPTY_LIST)
 
     (try! (fold new-owner-clojure owners (ok true)))
