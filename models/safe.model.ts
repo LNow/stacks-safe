@@ -107,4 +107,5 @@ export interface Task {
   threshold: string;
   approvals: string;
   executed: string;
+  executor: string;
 }

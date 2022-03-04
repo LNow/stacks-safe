@@ -598,6 +598,7 @@ describe("[SAFE]", () => {
         task.threshold.expectUint(initialThreshold);
         task.approvals.expectUint(0);
         task.executed.expectBool(false);
+        task.executor.expectPrincipal(txSender.address)
       });
 
       it("succeeds, creates new task with current threshold, 0 approvals and returns its id when threshold has been modified before task creation", () => {
@@ -623,6 +624,7 @@ describe("[SAFE]", () => {
         task.threshold.expectUint(newThreshold);
         task.approvals.expectUint(0);
         task.executed.expectBool(false);
+        task.executor.expectPrincipal(txSender.address)
       });
 
       it("succeeds, creates new task and this task is not affected by threshold change", () => {
@@ -648,6 +650,7 @@ describe("[SAFE]", () => {
         task.threshold.expectUint(initialThreshold);
         task.approvals.expectUint(0);
         task.executed.expectBool(false);
+        task.executor.expectPrincipal(txSender.address)
       });
     });
   });
@@ -788,7 +791,7 @@ describe("[SAFE]", () => {
       const setupTxSender = ctx.deployer;
       const txSender = owners[0];
       const setupTx = safe.setup(owners, threshold, setupTxSender);
-      const createTaskTx = safe.createTask(txSender);
+      const createTaskTx = safe.createTask(accounts.get("wallet_2")!);
       chain.mineBlock([setupTx, createTaskTx]);
     });
 
@@ -843,6 +846,20 @@ describe("[SAFE]", () => {
 
       const task = safe.getTask(taskId).expectSome().expectTuple() as Task;
       task.executed.expectBool(true);
+    });
+
+    it("fails when called by address that is not executor", () => {
+      const taskId = 1;
+      const txSender = accounts.get("wallet_3")!;
+      const approveTaskTx = safe.approveTask(taskId, txSender);
+      const executeTaskTx = safe.executeTask(taskId, txSender);
+      chain.mineBlock([approveTaskTx]);
+
+      // act
+      const receipt = chain.mineBlock([executeTaskTx]).receipts[0];
+
+      // assert
+      receipt.result.expectErr().expectUint(SafeModel.Err.ERR_NOT_AUTHORIZED);
     });
 
     it("fails to execute task that has been already executed", () => {
