@@ -372,7 +372,13 @@ describe("[SAFE]", () => {
           initialThreshold,
           ctx.deployer
         );
-        chain.mineBlock([setupTx]);
+        const grantTx = auth.grant(
+          ctx.deployer.address,
+          safe.address,
+          "remove-owners",
+          ctx.deployer
+        );
+        chain.mineBlock([setupTx, grantTx]);
       });
 
       it("fails when owners list is empty", () => {
@@ -428,6 +434,21 @@ describe("[SAFE]", () => {
 
         // assert
         receipt.result.expectErr().expectUint(SafeModel.Err.ERR_CANT_ABANDON);
+      });
+
+      it("fails when called by address that has not been granted to call it", () => {
+        const owners: Account[] = [
+          accounts.get("wallet_3")!,
+          accounts.get("wallet_2")!,
+        ];
+        const txSender = accounts.get("wallet_3")!;
+        const removeOwnersTx = safe.removeOwners(owners, txSender);
+
+        // act
+        const receipt = chain.mineBlock([removeOwnersTx]).receipts[0];
+
+        // assert
+        receipt.result.expectErr().expectUint(SafeModel.Err.ERR_NOT_AUTHORIZED);
       });
 
       it("succeeds and removes owners, reduce owners count", () => {

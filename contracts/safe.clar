@@ -61,6 +61,7 @@
 (define-public (remove-owners (owners (list 30 principal)))
   (begin
     (asserts! (> (var-get cfgOwnersCount) u0) ERR_NOT_SETUP)
+    (asserts! (can-call contract-caller "remove-owners") ERR_NOT_AUTHORIZED)
     (asserts! (> (len owners) u0) ERR_EMPTY_LIST)
     (asserts! (> (var-get cfgOwnersCount) (len owners)) ERR_CANT_ABANDON)
 
