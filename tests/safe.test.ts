@@ -469,94 +469,76 @@ describe("[SAFE]", () => {
       receipt.result.expectErr().expectUint(SafeModel.Err.ERR_NOT_SETUP);
     });
 
-    it("fails when threshold is equal 0", () => {
-      const initialOwners: Account[] = [
-        accounts.get("wallet_2")!,
-        accounts.get("wallet_3")!,
-        accounts.get("wallet_5")!,
-      ];
-      const initialThreshold = initialOwners.length;
-      const threshold = 0;
-      const txSender = ctx.deployer;
-      const setupTx = safe.setup(initialOwners, initialThreshold, txSender);
-      const changeThresholdTx = safe.changeThreshold(threshold, txSender);
-      chain.mineBlock([setupTx]);
+    describe("after setup", () => {
+      const initialOwnersCount = 3;
+      const initialThreshold = 2;
 
-      // act
-      const receipt = chain.mineBlock([changeThresholdTx]).receipts[0];
+      beforeEach(() => {
+        const initialOwners: Account[] = [
+          accounts.get("wallet_2")!,
+          accounts.get("wallet_3")!,
+          accounts.get("wallet_5")!,
+        ];
+        const txSender = ctx.deployer;
+        const setupTx = safe.setup(initialOwners, initialThreshold, txSender);
+        chain.mineBlock([setupTx]);
+      });
 
-      // assert
-      receipt.result
-        .expectErr()
-        .expectUint(SafeModel.Err.ERR_INCORRECT_THRESHOLD);
-    });
+      it("fails when threshold is equal 0", () => {
+        const threshold = 0;
+        const txSender = ctx.deployer;
+        const changeThresholdTx = safe.changeThreshold(threshold, txSender);
 
-    it("fails when threshold is greater than owners count", () => {
-      const initialOwners: Account[] = [
-        accounts.get("wallet_2")!,
-        accounts.get("wallet_3")!,
-        accounts.get("wallet_5")!,
-      ];
-      const initialThreshold = initialOwners.length;
-      const threshold = 15;
-      const txSender = ctx.deployer;
-      const setupTx = safe.setup(initialOwners, initialThreshold, txSender);
-      const changeThresholdTx = safe.changeThreshold(threshold, txSender);
-      chain.mineBlock([setupTx]);
+        // act
+        const receipt = chain.mineBlock([changeThresholdTx]).receipts[0];
 
-      // act
-      const receipt = chain.mineBlock([changeThresholdTx]).receipts[0];
+        // assert
+        receipt.result
+          .expectErr()
+          .expectUint(SafeModel.Err.ERR_INCORRECT_THRESHOLD);
+      });
 
-      // assert
-      receipt.result
-        .expectErr()
-        .expectUint(SafeModel.Err.ERR_INCORRECT_THRESHOLD);
-    });
+      it("fails when threshold is greater than owners count", () => {
+        const threshold = initialOwnersCount + 1;
+        const txSender = ctx.deployer;
+        const changeThresholdTx = safe.changeThreshold(threshold, txSender);
 
-    it("succeeds and changes threshold to lower value than previous one", () => {
-      const initialOwners: Account[] = [
-        accounts.get("wallet_2")!,
-        accounts.get("wallet_3")!,
-        accounts.get("wallet_5")!,
-      ];
-      const initialThreshold = initialOwners.length;
-      const threshold = 1;
-      const txSender = ctx.deployer;
-      const setupTx = safe.setup(initialOwners, initialThreshold, txSender);
-      const changeThresholdTx = safe.changeThreshold(threshold, txSender);
-      chain.mineBlock([setupTx]);
+        // act
+        const receipt = chain.mineBlock([changeThresholdTx]).receipts[0];
 
-      // act
-      const receipt = chain.mineBlock([changeThresholdTx]).receipts[0];
+        // assert
+        receipt.result
+          .expectErr()
+          .expectUint(SafeModel.Err.ERR_INCORRECT_THRESHOLD);
+      });
 
-      // assert
-      receipt.result.expectOk().expectBool(true);
+      it("succeeds and changes threshold to lower value than previous one", () => {
+        const threshold = initialThreshold - 1;
+        const txSender = ctx.deployer;
+        const changeThresholdTx = safe.changeThreshold(threshold, txSender);
 
-      safe.getThreshold().expectUint(threshold);
-    });
+        // act
+        const receipt = chain.mineBlock([changeThresholdTx]).receipts[0];
 
-    it("succeeds and changes threshold to higher value than previous one", () => {
-      const initialOwners: Account[] = [
-        accounts.get("wallet_2")!,
-        accounts.get("wallet_5")!,
-        accounts.get("wallet_4")!,
-        accounts.get("wallet_7")!,
-        accounts.get("wallet_3")!,
-      ];
-      const initialThreshold = 1;
-      const threshold = 3;
-      const txSender = ctx.deployer;
-      const setupTx = safe.setup(initialOwners, initialThreshold, txSender);
-      const changeThresholdTx = safe.changeThreshold(threshold, txSender);
-      chain.mineBlock([setupTx]);
+        // assert
+        receipt.result.expectOk().expectBool(true);
 
-      // act
-      const receipt = chain.mineBlock([changeThresholdTx]).receipts[0];
+        safe.getThreshold().expectUint(threshold);
+      });
 
-      // assert
-      receipt.result.expectOk().expectBool(true);
+      it("succeeds and changes threshold to higher value than previous one", () => {
+        const threshold = initialThreshold + 1;
+        const txSender = ctx.deployer;
+        const changeThresholdTx = safe.changeThreshold(threshold, txSender);
 
-      safe.getThreshold().expectUint(threshold);
+        // act
+        const receipt = chain.mineBlock([changeThresholdTx]).receipts[0];
+
+        // assert
+        receipt.result.expectOk().expectBool(true);
+
+        safe.getThreshold().expectUint(threshold);
+      });
     });
   });
 
