@@ -166,3 +166,7 @@
     (ok true)
   )
 )
+
+(define-private (can-call (who principal) (what (string-ascii 32)))
+  (contract-call? .auth can-call who CONTRACT_ADDRESS what)
+)
