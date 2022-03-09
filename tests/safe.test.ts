@@ -527,7 +527,13 @@ describe("[SAFE]", () => {
         ];
         const txSender = ctx.deployer;
         const setupTx = safe.setup(initialOwners, initialThreshold, txSender);
-        chain.mineBlock([setupTx]);
+        const grantTx = auth.grant(
+          txSender.address,
+          safe.address,
+          "change-threshold",
+          txSender
+        );
+        chain.mineBlock([setupTx, grantTx]);
       });
 
       it("fails when threshold is equal 0", () => {
@@ -556,6 +562,18 @@ describe("[SAFE]", () => {
         receipt.result
           .expectErr()
           .expectUint(SafeModel.Err.ERR_INCORRECT_THRESHOLD);
+      });
+
+      it("fails when called by address that has not been granted to call it", () => {
+        const threshold = initialThreshold - 1;
+        const txSender = accounts.get("wallet_3")!;
+        const changeThresholdTx = safe.changeThreshold(threshold, txSender);
+
+        // act
+        const receipt = chain.mineBlock([changeThresholdTx]).receipts[0];
+
+        // assert
+        receipt.result.expectErr().expectUint(SafeModel.Err.ERR_NOT_AUTHORIZED);
       });
 
       it("succeeds and changes threshold to lower value than previous one", () => {
@@ -610,7 +628,9 @@ describe("[SAFE]", () => {
         ];
         const setupTxSender = ctx.deployer;
         const setupTx = safe.setup(owners, initialThreshold, setupTxSender);
-        chain.mineBlock([setupTx]);
+        const grantTx1 = auth.grant(accounts.get("wallet_2")!.address, safe.address, "change-threshold", setupTxSender);
+        const grantTx2 = auth.grant(accounts.get("wallet_3")!.address, safe.address, "change-threshold", setupTxSender);
+        chain.mineBlock([setupTx, grantTx1, grantTx2]);
       });
 
       it("fails when called by walled by wallet that is not one of the safe owners", () => {

@@ -75,6 +75,7 @@
 (define-public (change-threshold (threshold uint))
   (begin
     (asserts! (> (var-get cfgOwnersCount) u0) ERR_NOT_SETUP)
+    (asserts! (can-call contract-caller "change-threshold") ERR_NOT_AUTHORIZED)
     (asserts! (and (> threshold u0) (<= threshold (var-get cfgOwnersCount))) ERR_INCORRECT_THRESHOLD)
     (var-set cfgThreshold threshold)
     (ok true)
