@@ -1,4 +1,4 @@
-import { describe, it, run, Context, beforeEach, types } from "../deps.ts";
+import { describe, it, run, Context, beforeEach, types, afterEach } from "../deps.ts";
 import { AuthModel } from "../models/auth.model.ts";
 
 let ctx: Context;
@@ -7,6 +7,10 @@ let auth: AuthModel;
 beforeEach(() => {
   ctx = new Context();
   auth = ctx.models.get(AuthModel);
+});
+
+afterEach(() => {
+  ctx.terminate();
 });
 
 describe("[Auth]", () => {

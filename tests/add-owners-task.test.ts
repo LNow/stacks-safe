@@ -10,6 +10,7 @@ import {
   Account,
   beforeAll,
   assertEquals,
+  afterEach,
 } from "../deps.ts";
 import { SafeModel, Task } from "../models/safe.model.ts";
 import { AddOwnersTaskModel } from "../models/add-owners-task.model.ts";
@@ -28,6 +29,10 @@ beforeEach(() => {
   accounts = ctx.accounts;
 
   chain.mineEmptyBlock(200);
+});
+
+afterEach(() => {
+  ctx.terminate();
 });
 
 describe("[ADD OWNERS_TASK]", () => {
@@ -116,7 +121,7 @@ describe("[ADD OWNERS_TASK]", () => {
         result.expectBool(true);
       }
 
-      const task = safe.getTask(taskId).expectSome().expectTuple() as Task;
+      const task = safe.getTask(taskId).expectSome().expectTuple();
       task.executed.expectBool(true);
     })
   });

@@ -9,6 +9,7 @@ import {
   Accounts,
   Account,
   beforeAll,
+afterEach,
 } from "../deps.ts";
 import { SafeModel, Task } from "../models/safe.model.ts";
 
@@ -24,6 +25,10 @@ beforeEach(() => {
   accounts = ctx.accounts;
 
   chain.mineEmptyBlock(200);
+});
+
+afterEach(() => {
+  ctx.terminate();
 });
 
 describe("[SAFE]", () => {
@@ -594,7 +599,7 @@ describe("[SAFE]", () => {
         const task = safe
           .getTask(expectedTaskId)
           .expectSome()
-          .expectTuple() as Task;
+          .expectTuple();
         task.threshold.expectUint(initialThreshold);
         task.approvals.expectUint(0);
         task.executed.expectBool(false);
@@ -620,7 +625,7 @@ describe("[SAFE]", () => {
         const task = safe
           .getTask(expectedTaskId)
           .expectSome()
-          .expectTuple() as Task;
+          .expectTuple();
         task.threshold.expectUint(newThreshold);
         task.approvals.expectUint(0);
         task.executed.expectBool(false);
@@ -646,7 +651,7 @@ describe("[SAFE]", () => {
         const task = safe
           .getTask(expectedTaskId)
           .expectSome()
-          .expectTuple() as Task;
+          .expectTuple();
         task.threshold.expectUint(initialThreshold);
         task.approvals.expectUint(0);
         task.executed.expectBool(false);
@@ -709,7 +714,7 @@ describe("[SAFE]", () => {
       // assert
       receipt.result.expectOk().expectBool(true);
 
-      const task = safe.getTask(taskId).expectSome().expectTuple() as Task;
+      const task = safe.getTask(taskId).expectSome().expectTuple();
       task.approvals.expectUint(1);
     });
 
@@ -727,7 +732,7 @@ describe("[SAFE]", () => {
       // assert
       receipt.result.expectOk().expectBool(true);
 
-      const task = safe.getTask(taskId).expectSome().expectTuple() as Task;
+      const task = safe.getTask(taskId).expectSome().expectTuple();
       task.approvals.expectUint(2);
     });
 
@@ -743,7 +748,7 @@ describe("[SAFE]", () => {
       // assert
       receipt.result.expectErr().expectUint(SafeModel.Err.ERR_ALREADY_APPROVED);
 
-      const task = safe.getTask(taskId).expectSome().expectTuple() as Task;
+      const task = safe.getTask(taskId).expectSome().expectTuple();
       task.approvals.expectUint(1);
     });
 
@@ -844,7 +849,7 @@ describe("[SAFE]", () => {
       // assert
       receipt.result.expectOk().expectBool(true);
 
-      const task = safe.getTask(taskId).expectSome().expectTuple() as Task;
+      const task = safe.getTask(taskId).expectSome().expectTuple();
       task.executed.expectBool(true);
     });
 
